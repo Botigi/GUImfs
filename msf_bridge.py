@@ -146,8 +146,9 @@ class MsfBridge:
 
     def run_download(self, remote_path: str, local_path: str) -> bool:
         session = self._session()
-        session.download_file(local_path, remote_path)
-        return os.path.exists(local_path)
+        safe_local = os.path.join(os.path.dirname(local_path) or ".", os.path.basename(local_path))
+        session.download_file(safe_local, remote_path)
+        return os.path.exists(safe_local)
 
     def run_ipconfig(self) -> str:
         return self._run("ipconfig")
@@ -163,5 +164,5 @@ class MsfBridge:
         }
         cmd = actions.get(action.lower())
         if not cmd:
-            raise ValueError("Invalid keyscan action")
+            raise ValueError("Invalid keyscan action. Must be one of: start, stop, dump")
         return self._run(cmd)

