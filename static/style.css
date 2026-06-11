@@ -1,0 +1,54 @@
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'Fira Code', ui-monospace, monospace;
+}
+
+.machine-card {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(13, 15, 20, 0.35);
+}
+
+.attack-arrow {
+  animation: arrowMove 1s infinite ease-in-out;
+}
+
+.pulse-compromised {
+  animation: pulseBadge 1.3s infinite;
+}
+
+.accordion-content {
+  display: none;
+}
+
+.accordion-content.open {
+  display: block;
+}
+
+@keyframes pulseBadge {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 110, 26, 0.65);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 110, 26, 0);
+  }
+}
+
+@keyframes arrowMove {
+  0% {
+    transform: translateX(-4px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-4px);
+    opacity: 0.5;
+  }
+}

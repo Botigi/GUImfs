@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeterpreterViz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              bg: '#0d0f14',
+              surface: '#161b22',
+              attacker: '#ff4d4d',
+              healthy: '#3fb950',
+              compromised: '#ff6e1a',
+              textMain: '#e6edf3',
+              textSecondary: '#8b949e',
+              action: '#388bfd'
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body class="bg-bg text-textMain min-h-screen p-4 md:p-6">
+    <div class="max-w-[1400px] mx-auto space-y-4">
+      <section class="bg-surface rounded-lg p-4 border border-slate-700">
+        <div class="grid md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+          <div class="machine-card border border-attacker">
+            <div class="text-attacker font-semibold">🔴 ATTAQUANT</div>
+            <div class="text-sm text-textSecondary">Kali Linux</div>
+            <div class="font-mono text-sm" id="attacker-ip">IP: 127.0.0.1</div>
+          </div>
+          <div id="attack-arrow" class="attack-arrow text-3xl text-action hidden">→</div>
+          <div id="victim-card" class="machine-card border border-healthy">
+            <div class="font-semibold">🩵 VICTIME</div>
+            <div class="text-sm text-textSecondary" id="victim-hostname">WINDOWS-TARGET</div>
+            <div class="font-mono text-sm" id="victim-os">OS: Unknown</div>
+            <div class="font-mono text-sm" id="victim-ip">IP: N/A</div>
+            <span id="status-badge" class="inline-flex mt-2 px-2 py-1 text-xs rounded border border-healthy text-healthy">SAIN</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid lg:grid-cols-[40%_30%_1fr] gap-4">
+        <div class="bg-surface rounded-lg p-3 border border-slate-700 overflow-auto max-h-[58vh]" id="control-panel"></div>
+
+        <div class="bg-surface rounded-lg p-3 border border-slate-700 flex flex-col max-h-[58vh]">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="font-semibold">Journal d'activité</h2>
+            <button id="clear-log" class="text-xs px-2 py-1 bg-slate-700 rounded hover:bg-slate-600">Effacer</button>
+          </div>
+          <div id="activity-log" class="font-mono text-xs space-y-1 overflow-auto pr-1"></div>
+        </div>
+
+        <div class="bg-surface rounded-lg p-3 border border-slate-700 max-h-[58vh] overflow-auto">
+          <h2 class="font-semibold mb-2">Résultat</h2>
+          <div id="result-panel" class="font-mono text-sm whitespace-pre-wrap"></div>
+          <img id="screenshot-preview" class="hidden mt-3 rounded border border-slate-600" alt="Screenshot" />
+        </div>
+      </section>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
