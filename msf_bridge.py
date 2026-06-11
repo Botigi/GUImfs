@@ -165,5 +165,5 @@ class MsfBridge:
         }
         cmd = actions.get(action.lower())
         if not cmd:
-            raise ValueError("Invalid keyscan action. Must be one of: start, stop, dump")
+            raise ValueError("Invalid keyscan action. Must be one of: start, stop, dump (case-insensitive)")
         return self._run(cmd)

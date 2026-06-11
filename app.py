@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from urllib.parse import unquote
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -60,7 +61,8 @@ def _err(message: str):
 
 
 def _invalid_remote_path(path: str) -> bool:
-    return not path or "\x00" in path or ".." in path
+    normalized = unquote(path).replace("\\", "/")
+    return not path or "\x00" in normalized or ".." in normalized
 
 
 @app.get("/")
@@ -125,7 +127,7 @@ def api_file_upload():
         return _err("invalid filename")
     local_path = (UPLOAD_DIR / safe_name).resolve()
     upload_root = UPLOAD_DIR.resolve()
-    if upload_root not in local_path.parents and local_path != upload_root:
+    if not local_path.is_relative_to(upload_root):
         return _err("invalid upload path")
     file.save(local_path)
     try:
@@ -148,7 +150,7 @@ def api_file_download():
         return _err("remote_path is required")
     if _invalid_remote_path(remote_path):
         return _err("invalid remote_path")
-    if download_root not in local_path.parents and local_path != download_root:
+    if not local_path.is_relative_to(download_root):
         return _err("invalid download path")
     try:
         success = msf.run_download(remote_path, str(local_path))
