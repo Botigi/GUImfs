@@ -129,6 +129,9 @@ async function runCommand(command) {
       if (!fileInput.files.length || !remotePath) {
         throw new Error('Choisir un fichier et un chemin distant');
       }
+      if (remotePath.includes('..')) {
+        throw new Error('Chemin distant invalide');
+      }
       const formData = new FormData();
       formData.append('file', fileInput.files[0]);
       formData.append('remote_path', remotePath);
@@ -142,6 +145,9 @@ async function runCommand(command) {
 
     if (command === 'download') {
       const remotePath = document.getElementById('download-remote').value;
+      if (remotePath.includes('..')) {
+        throw new Error('Chemin distant invalide');
+      }
       const data = await requestJSON('/api/file/download', {
         method: 'POST',
         body: JSON.stringify({ remote_path: remotePath }),

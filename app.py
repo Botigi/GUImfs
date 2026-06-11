@@ -18,7 +18,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH_MB", "50")) * 1024 * 1024
 
 logger = logging.getLogger("session")
 logger.setLevel(logging.INFO)
@@ -57,6 +57,10 @@ def _ok(result: Any, status: str = "success"):
 
 def _err(message: str):
     return jsonify({"result": message, "timestamp": _ts(), "status": "error"}), 400
+
+
+def _invalid_remote_path(path: str) -> bool:
+    return not path or "\x00" in path or ".." in path
 
 
 @app.get("/")
@@ -114,10 +118,15 @@ def api_file_upload():
     remote_path = request.form.get("remote_path", "")
     if not file or not remote_path:
         return _err("file and remote_path are required")
+    if _invalid_remote_path(remote_path):
+        return _err("invalid remote_path")
     safe_name = secure_filename(file.filename or "")
     if not safe_name:
         return _err("invalid filename")
-    local_path = UPLOAD_DIR / safe_name
+    local_path = (UPLOAD_DIR / safe_name).resolve()
+    upload_root = UPLOAD_DIR.resolve()
+    if upload_root not in local_path.parents and local_path != upload_root:
+        return _err("invalid upload path")
     file.save(local_path)
     try:
         success = msf.run_upload(str(local_path), remote_path)
@@ -133,9 +142,14 @@ def api_file_download():
     data = request.get_json(silent=True) or {}
     remote_path = data.get("remote_path", "")
     filename = secure_filename(os.path.basename(remote_path)) or "downloaded.bin"
-    local_path = DOWNLOAD_DIR / filename
+    local_path = (DOWNLOAD_DIR / filename).resolve()
+    download_root = DOWNLOAD_DIR.resolve()
     if not remote_path:
         return _err("remote_path is required")
+    if _invalid_remote_path(remote_path):
+        return _err("invalid remote_path")
+    if download_root not in local_path.parents and local_path != download_root:
+        return _err("invalid download path")
     try:
         success = msf.run_download(remote_path, str(local_path))
         logger.info("download %s -> %s", remote_path, local_path)
@@ -184,4 +198,8 @@ def api_command(command: str):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+    app.run(
+        host=os.getenv("FLASK_HOST", "127.0.0.1"),
+        port=int(os.getenv("FLASK_PORT", "5000")),
+        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true",
+    )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 from pymetasploit3.msfrpc import MsfRpcClient
@@ -146,9 +147,9 @@ class MsfBridge:
 
     def run_download(self, remote_path: str, local_path: str) -> bool:
         session = self._session()
-        safe_local = os.path.join(os.path.dirname(local_path) or ".", os.path.basename(local_path))
-        session.download_file(safe_local, remote_path)
-        return os.path.exists(safe_local)
+        safe_local = Path(local_path).expanduser().resolve()
+        session.download_file(str(safe_local), remote_path)
+        return safe_local.exists()
 
     def run_ipconfig(self) -> str:
         return self._run("ipconfig")
